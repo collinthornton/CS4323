@@ -10,38 +10,42 @@
 #ifndef __EMPLOYEE_RECORD_H__
 #define __EMPLOYEE_RECORD_H__
 
+struct Day  { short day, year, time; };
+struct Time { short hour, minute; };
 struct Date {
-    struct Day {
-        short day, year, time;
-    };
-    struct Time {
-        short hour, minute, second;
-    };
+    struct Day day;
+    struct Time time;
 };
 
-struct EmployeeData {
-    char name[];
-    char job_title[];
-    char dpt_id[];
-    char dpt_name[];
+struct Employee {
+    char *first_name, *last_name;
+    char *job_title;
+    char *dpt_id;
+    char *dpt_name;
 
-    Date hire_date;
-    Date term_date;
+    struct Date hire_date;
+    struct Date term_date;
 
     float net_salary;
     float gross_salary;
 };
 
-struct Employee {
-    EmployeeData* prev;
-    EmployeeData* next;
-    EmployeeData* curr;
+struct Database {
+    struct Employee* employee_list;
+    char** dpt_list; 
 };
-Employee *HEAD, *TAIL;
 
-void addEmployee(const EmployeeData &employee);
-void delEmployee(const EmployeeData &employee);
-void sortListByDpt
+int main(int argc, char** argv);
+
+void createDatabase(char* input_files[], int numFiles, struct Database* database);
+void destroyDatabase(struct Database* database); 
+
+unsigned int addEmployee(const struct Employee *employee, struct Database *database);
+unsigned int delEmployee(const struct Employee *employee, struct Database *database);
+unsigned int increaseListSize(unsigned int, struct Database *database);
+unsigned int decreaseListSize(unsigned int, struct Database *database);
+
+void menuStateMachine(void);
 
 
 #endif // __EMPLOYEE_RECORD_H__
