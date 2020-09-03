@@ -27,8 +27,8 @@ int main(int argc, char** argv) {
     // INITIALIZING INPUT FILES
     const unsigned int num_input_files = 2;
     char input_files[2][100];
-    strcpy(input_files[0], "pa_1/resources/BaltimoreCityEmployeeSalariesFY2018.csv");
-    strcpy(input_files[1], "pa_1/resources/BaltimoreCityEmployeeSalariesFY2019.csv");
+    strcpy(input_files[0], "./BaltimoreCityEmployeeSalariesFY2018.csv");
+    strcpy(input_files[1], "./BaltimoreCityEmployeeSalariesFY2019.csv");
 
     printf("This is a menu driven program. Please follow the instructions to execute properly.\r\n\r\n");
 
