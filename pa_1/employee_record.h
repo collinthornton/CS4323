@@ -95,11 +95,6 @@ typedef struct {
 //  FUNCTION DEFINITIONS 
 //
 
-/*
-// @brief Manages database, menu state machine, and input files
-*/
-int main(int argc, char** argv);
-
 //
 //------ Functions controlling the database ------ /
 //
