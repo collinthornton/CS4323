@@ -10,6 +10,8 @@
 
 #include "../include/rating.h"
 
+// DEFINE IPC NAMES
+
 const char *OUT_QUEUE_NAME 	= "/TOMAIN";
 const char *IN_QUEUE_NAME 	= "/TOMSGPASS";
 
@@ -20,11 +22,14 @@ int main()
 	printf("LAUNCH:\t\tMSGPAS %d\r\n", getpid());
 	#endif
 
-	mqd_t in_qd, out_qd;   // queue descriptors
-	if(mq_close(out_qd) == -1) 		{}
-	if(mq_unlink(OUT_QUEUE_NAME)) 	{}	
-	if(mq_close(in_qd) == -1) 		{}
+	// DEFINE AND CLEAR MESSAGE QUEUE
+
+	mqd_t in_qd, out_qd;   
+	if(mq_unlink(OUT_QUEUE_NAME)) 	{}
 	if(mq_unlink(IN_QUEUE_NAME)) 	{}
+
+
+	// DEFINE QUEUE ATTRIBUTES
 
 	struct mq_attr in_attr;
 	in_attr.mq_flags 	= MQ_FLAGS;
@@ -39,6 +44,8 @@ int main()
 	out_attr.mq_curmsgs = 0;
 
 
+	// OPEN QUEUES
+
 	if ((in_qd = mq_open (IN_QUEUE_NAME, O_CREAT | O_RDWR, PERMISSIONS, &in_attr)) == -1) {
 		perror("msgpass:\tmq_open");
 		printf("errno:\t%d\r\n", errno);
@@ -50,12 +57,19 @@ int main()
 		printf("errno:\t%d\r\n", errno);
 		exit(1);
 	}
+
+
+	// INIT BUFFERS
+
 	char in_buffer[MSG_BUFFER_SIZE];
 	char out_buffer[MSG_BUFFER_SIZE];
 
 	#ifdef MSGPASS_VERBOSE
 	printf("MSGPAS->MAIN:\tWAITING FOR ISBN\r\n");
 	#endif
+
+
+	// SEND READY SIGNAL TO MAIN PROCESS
 
 	strcpy(out_buffer, "READY");
 	if(mq_send(out_qd, out_buffer, MAX_MSG_SIZE, 0) == -1) {
@@ -64,6 +78,8 @@ int main()
 		exit(1);
 	}
 
+	
+	// WAIT FOR ISBN
 	while(in_attr.mq_curmsgs == 0) { 
 		sleep(1); 
 		mq_getattr(in_qd, &in_attr); 
@@ -73,9 +89,10 @@ int main()
 		#endif
 	}
 
-	mq_receive(in_qd, in_buffer, MSG_BUFFER_SIZE, NULL);
 
+	// PROCESS ISBN
 	Rating in_rating;
+	mq_receive(in_qd, in_buffer, MSG_BUFFER_SIZE, NULL);
 
 	#ifdef MSGPASS_VERBOSE
 	printf("MSGPAS\t\tCALLING DESERIALIZE\r\n");
@@ -89,6 +106,8 @@ int main()
 	#endif
 
 
+	// CREATE LIST OF RATINGS
+
 	RatingList rating_list;
 	rating_list.num_allocated = 0;
 	rating_list.num_ratings = 0;
@@ -100,6 +119,7 @@ int main()
 	out_ratings.num_ratings = 0;
 	
 	
+	// SEARCH RATING LIST FOR ISBN & SEND OUTPUT
 
 	if(	srchRatingList(in_rating.isbn, &rating_list, &out_ratings) == NULL) {
 		#ifdef MSGPASS_VERBOSE
@@ -109,7 +129,7 @@ int main()
 		mq_send(out_qd, "RATING_NOT_FOUND", MAX_MSG_SIZE, 0);
 	} else {
 		#ifdef MSGPASS_VERBOSE
-		printf("MSGPAS->MAIN:\rRATING FOUND\r\n");
+		printf("MSGPAS->MAIN:\r%d RATINGS FOUND\r\n", out_ratings.num_ratings);
 		#endif
 		for(int i=0; i<out_ratings.num_ratings; ++i) {
 			#ifdef MSGPASS_VERBOSE
@@ -118,13 +138,32 @@ int main()
 
 			serialize(&out_ratings.rating_list[i], out_buffer);
 			if(mq_send(out_qd, out_buffer, MAX_MSG_SIZE, 0) == -1) {
-				perror("msgpass:\tsned rating");
+				perror("msgpass:\tsend rating");
 				printf("errno:\t%d\r\n", errno);
 				exit(1);
 			}
 		}
+
+		// ADD LAST RATING WITH ALL FIELDS = NULL
+		
+		Rating final_rating;
+		strcpy(final_rating.isbn, "NULL");
+		strcpy(final_rating.user, "NULL");
+		strcpy(final_rating.rating, "NULL");
+
+		serialize(&final_rating, out_buffer);
+		if(mq_send(out_qd, out_buffer, MAX_MSG_SIZE, 0) == -1) {
+			perror("msgpass:\tsend final rating");
+			printf("errno:\t%d\r\n", errno);
+			exit(1);
+		}		
 	}
 
+	#ifdef MSGPASS_VERBOSE
+	printf("MSGPAS:\t\tCLEANING UP MEMORY\r\n");
+	#endif
+
+	// CLEANUP MEMORY
 	destroyRatingList(&out_ratings);
 	destroyRatingList(&rating_list);
 
@@ -132,5 +171,8 @@ int main()
 	printf("MSGPAS->MAIN:\tEXITING\r\n");		
 	#endif
 
+
+	// EXIT
+	
 	return 0; 
 } 

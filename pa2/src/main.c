@@ -10,6 +10,16 @@
 #include "../include/book.h"
 #include "../include/rating.h"
 
+
+/*
+// @brief Get location of given user
+// @param userID (long) userID to be used as input
+// @param buff (char*) Buffer to store location
+// @return (const char*) Location (same as buff)
+*/
+const char* getLocation(long userID, char *buff);
+
+
 const char *HEADER = " \
 // ########################################## \r\n \
 // \r\n \
@@ -42,9 +52,7 @@ int main(int argc, char** argv) {
     // DEFINE AND CLEAR MESSAGE QUEUE
 
     mqd_t in_qd, out_qd;
-	if(mq_close(in_qd) == -1) 		{}
 	if(mq_unlink(IN_QUEUE_NAME)) 	{}
-	if(mq_close(out_qd) == -1) 		{}
 	if(mq_unlink(OUT_QUEUE_NAME)) 	{}
 
     // DEFINE AND LAUNCH PROCESSES
@@ -139,8 +147,8 @@ int main(int argc, char** argv) {
 
     ptr = (Book *)mmap(0, sizeof(Book), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     if(ptr == MAP_FAILED) {
-        perror("Parent: mmap");
-        printf("errno: %d\r\n", errno);
+        perror("Parent:\t\tmmap");
+        printf("errno:\t\t\t%d\r\n", errno);
         return(1);
     }
 
@@ -148,20 +156,22 @@ int main(int argc, char** argv) {
     // OPEN MESSAGE QUEUE FOR RATING
 
     if((in_qd = mq_open(IN_QUEUE_NAME, O_CREAT | O_RDWR, PERMISSIONS, &in_attr)) == -1) {
-        perror("Parent:\tmq_open");
-        printf("errno:\t%d\r\n", errno);
+        perror("Parent:\t\tmq_open");
+        printf("errno:\t\t\t%d\r\n", errno);
         exit(1);
     }
 
     if((out_qd = mq_open(OUT_QUEUE_NAME, O_CREAT | O_RDWR, PERMISSIONS, &out_attr)) == -1) {
-        perror("Parent:\tmq_open");
-        printf("errno:\t%d\r\n", errno);
+        perror("Parent:\t\tmq_open");
+        printf("errno:\t\t\t%d\r\n", errno);
         exit(1);
     }
 
-    // DECLARE MEMORY FOR MESSAGE BUFFERS
+    // DECLARE MEMORY FOR MESSAGE BUFFERS AND INITIALIZE
     char in_buffer[MAX_MSG_SIZE];
     char out_buffer[MAX_MSG_SIZE];
+    strcpy(in_buffer, "INIT");
+    strcpy(out_buffer, "INIT");
 
     #ifdef SHMEM_VERBOSE
     printf("MAIN->SHMEM:\tWATING FOR SHMEM TO SET FLAG\r\n");
@@ -176,9 +186,6 @@ int main(int argc, char** argv) {
     printf("MAIN->MSGPAS:\tWAITING FOR MSGPASS TO SEND READY SIGNAL\r\n");
     #endif
 
-
-    // INITIALIZE INPUT BUFFER
-    strcpy(in_buffer, "WAITING");
 
     // WAIT FOR MSGPASS CHILD TO SEND READY SIGNAL
     mq_getattr(in_qd, &in_attr);
@@ -249,6 +256,9 @@ int main(int argc, char** argv) {
 
     // DECLARE MEMORY FOR INCOMING RATING AND SETUP A LIST OF RATINGS
     Rating in_rating;
+    strcat(in_rating.isbn, "init");
+    strcat(in_rating.user, "init");
+    strcat(in_rating.rating, "init");
 
     RatingList rating_list;
     rating_list.num_allocated = 0;
@@ -257,7 +267,18 @@ int main(int argc, char** argv) {
 
     // READ ALL INCOMING RATINGS FROM MSGPASS CHILD
 
-    for(int i=0; i<in_attr.mq_curmsgs; ++i) {
+    int MAX_RATINGS = 100;
+    for(int i=0; i<MAX_RATINGS; ++i) {
+        mq_getattr(in_qd ,&in_attr);
+        
+        #ifdef MSGPASS_VERBOSE
+        printf("MAIN:\t\tWAITING FOR MSG %d\r\n", i);
+        #endif
+
+        while(in_attr.mq_curmsgs == 0) {
+            sleep(1);
+            mq_getattr(in_qd, &in_attr);
+        }
         mq_receive(in_qd, in_buffer, MSG_BUFFER_SIZE, NULL);
 
         #ifdef MSGPASS_VERBOSE
@@ -265,6 +286,14 @@ int main(int argc, char** argv) {
         #endif
 
         deserialize(in_buffer, &in_rating);
+
+
+        // EXIT LOOP UPON RECEIPT OF LAST RATING
+
+        if(strcmp(in_rating.isbn, "NULL") == 0 && strcmp(in_rating.user, "NULL") == 0 && strcmp(in_rating.rating, "NULL") == 0) break;
+
+        // OTHERWISE ADD TO LIST
+        
         addRatingToList(&in_rating, &rating_list);
         
         #ifdef MSGPASS_VERBOSE
@@ -311,6 +340,9 @@ int main(int argc, char** argv) {
         #endif
     }
 
+
+    // OUTPUT DATA
+
     printf("\r\n\r\n|----------------------------------------------------------------------------------------------------|\r\n|\r\n");
     if(*flag == BOOK_FOUND) {
         printf("| BOOK FOUND ------ ISBN: %10s  TITLE: %20s  -- AUTHOR: %15s  -- PUBLISHER: %10s  -- YEAR: %d\r\n", ptr->isbn, ptr->title, ptr->author, ptr->publisher, ptr->year);
@@ -323,7 +355,8 @@ int main(int argc, char** argv) {
     printf("|\r\n");
     if(rating_list.num_ratings > 0) {
         for(int i=0; i<rating_list.num_ratings; ++i) {
-            printf("|  RATING FOUND --- ISBN: %10s  USER: %10s  RATING:%5s\r\n", rating_list.rating_list[i].isbn, rating_list.rating_list[i].user, rating_list.rating_list[i].rating);
+            char locationBuff[50];
+            printf("|  RATING FOUND --- ISBN: %10s  USER: %10s  RATING:%5s  LOCATION:%15s\r\n", rating_list.rating_list[i].isbn, rating_list.rating_list[i].user, rating_list.rating_list[i].rating, getLocation(atoi(rating_list.rating_list[i].user), locationBuff));
         }
     } else {
         printf("|  NO RATINGS FOUND");
@@ -332,7 +365,8 @@ int main(int argc, char** argv) {
     printf("|\r\n|----------------------------------------------------------------------------------------------------|\r\n\r\n\r\n");
 
 
-    // PARENT PROCESS
+    // WAIT FOR CHILD TERMINATION
+
     for(int i=0; i<NUM_PROCESSES; ++i) {
         pid_t died = wait(NULL);
         if(died == pids[0]) {
@@ -346,6 +380,9 @@ int main(int argc, char** argv) {
             #endif
         }
     }
+
+
+    // CLEANUP MEMORY
 
     destroyRatingList(&rating_list);
 
@@ -362,6 +399,62 @@ int main(int argc, char** argv) {
 	if(mq_close(out_qd) == -1) 		{}
 	if(mq_unlink(OUT_QUEUE_NAME)) 	{}
 
+
+    // EXIT
+
     return 0;
 }
 
+
+
+/*
+// @brief Get location of given user
+// @param userID (long) userID to be used as input
+// @param buff (char*) Buffer to store location
+// @return (const char*) Location (same as buff)
+*/
+const char* getLocation(long userID, char *locationBuff) {
+    FILE *file = fopen("../data/Users.txt", "r");
+
+    if(file == NULL) {
+        perror("users: Input file not found");
+        exit(1);
+    }
+
+    char buff[1024];
+
+    fgets(buff, 1024, file);
+
+    #ifdef SHMEM_VERBOSE
+    printf("\r\n\r\n");
+    #endif
+
+    long j=0;
+    char fields[3][256];
+
+
+    // SCAN THROUGH FILE FOR USERID
+
+    while(j != userID && fgets(buff, 1024, file) != NULL) {
+        char *tmp = strtok(buff, ";");
+
+        int i = 0;
+        while(tmp != NULL && i < 3) {
+            strcpy(fields[i++], tmp);
+
+            tmp = strtok(NULL, ";");
+        }
+
+        j = atoi(fields[0]);
+    }
+
+
+    // IF FOUND, OUTPUT LOCATION. ELSE OUTPUT "N/A"
+
+    if(j != userID) strcpy(locationBuff, "N/A");
+    else strcpy(locationBuff, fields[1]);
+
+    fclose(file);
+
+    return(locationBuff);
+}
