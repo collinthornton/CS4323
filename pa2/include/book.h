@@ -33,6 +33,7 @@
 //#define SHMEM_VERBOSE
 
 
+// STRUCT TO CONTAIN BOOK INFORMATION
 typedef struct {
     char isbn[32];
     char title[256];
@@ -41,14 +42,33 @@ typedef struct {
     unsigned int year;
 } Book;
 
+
+// STRUCT TO CONTAIN LIST OF BOOKS
 typedef struct {
     Book *book_list;
     int num_allocated, num_books;
 } BookList;
 
+/*
+// @brief Generate a list of books allocated on heap
+// @param input_file (const char*) filenames to be used as input
+// @param book_list (BookList) Struct to store list
+*/
 void createBookList(const char *input_file, BookList *book_list);
+
+/*
+// @brief Free data from heap
+// @param book_list (BookList*) List to be freed
+*/
 void destroyBookList(BookList *book_list);
 
+
+/*
+// @brief Search a book list for isbn
+// @param isbn (const char*) isbn to be used as key
+// @param book_list (BookList*) List to search
+// @return (Book*) Book with given isbn
+*/
 Book* srchDatabase(const char *isbn, BookList *book_list);
 
 
