@@ -24,4 +24,5 @@ Or, simply run (in src directory):
 
 Execution instructions (in src directory):
 - __Data should be in data/ directory__
+
 `./main <ISBN>`
