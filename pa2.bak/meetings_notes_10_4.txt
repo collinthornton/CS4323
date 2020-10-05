@@ -1,0 +1,48 @@
+Attendees: 
+	Collin
+	Kazi
+	Ethan
+	Caleb
+
+
+-----------------------------
+
+Work Distribution:
+-Kazi
+	- part 3 and/or part 4
+
+
+-Caleb
+	- part 6
+
+
+-Ethan
+	- part 7
+
+
+-Collin
+	- part 5
+
+
+-------------------------------
+
+Notes
+	- Get clarification on part 7
+	- Working with git server. Branches for each person + main branch
+	- Try to wrap the code into a function with specific input/output that can be executed from main
+
+
+
+-------------------------------
+
+Schedule
+	- Try to have individual component complete by October 14 (Wed)
+	- 1.5 weeks to integrate and fix bugs
+
+
+
+-------------------------------
+
+Meetings
+	- Sunday @ 7:30 p.m.
+	- Wednesday @ 9:30 p.m.
