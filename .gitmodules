@@ -1,0 +1,3 @@
+[submodule "pa2"]
+	path = pa2
+	url = https://github.com/collinthornton/CS4323-Assign02.git
