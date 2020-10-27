@@ -73,7 +73,6 @@ int main(int argc, char** argv) {
         if(pids[0] == 0) { 
             
             // EXECUTE SHARED MEMORY CHILD IN SEPERATE PROGRAM
-            
             execlp("./shmem", "shmem", NULL);
             exit(0);
         }
