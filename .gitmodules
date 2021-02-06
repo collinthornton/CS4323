@@ -1,3 +1,6 @@
 [submodule "pa2"]
 	path = pa2
 	url = https://github.com/collinthornton/CS4323-Assign02.git
+[submodule "final/code"]
+	path = final/code
+	url = https://github.com/collinthornton/cs4323_final_project.git

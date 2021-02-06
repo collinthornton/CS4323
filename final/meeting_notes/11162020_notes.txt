@@ -1,0 +1,28 @@
+November 16, 2020
+
+attendees
+	- robert
+	- collin
+	- tyler
+
+
+email
+	- limit .c files
+	- number of trainers (in-class said 1:1, in-document not defined)
+	- deadlock
+
+
+progress
+	- robert -> main sim files, basic client structs, etc
+	- tyler  -> test files for mutex synchronization
+	- collin -> msg header files and structs for client, gym, trainer, workout
+
+
+understanding
+
+	- part 2
+		deadlock likely occurs when file is open and weight is requested, but other client
+			holds wait and is attempting to put back
+
+next meeting
+	- friday (11/20/2020) @ 8:00 p.m.

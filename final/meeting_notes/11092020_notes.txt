@@ -1,0 +1,44 @@
+November 9, 2020
+
+
+Attendees
+	- Collin
+	- Robert
+	- Tyler
+
+
+
+Enums
+	- ClientState  { arriving, waiting, training, leaving }
+	- TrainerState { free, on_phone, with_client, travelling }
+
+Structs
+	- Trainer
+		TrainerState state 		(free, on phone, with client, travelling)
+		Client* current_client		(pointer to current client)
+
+
+	- Client
+		ClientState state		(arriving, waiting, training, leaving)
+		Trainer* current_trainer	(pointer to current trainer)
+		Couch* current_couch 		(maybe just a semaphore)
+
+		Workout* workout
+		
+
+	- Gym
+		TrainerList* trainers		(array of trainers)
+		ClientList* clients		(master array of clients)
+		Couch* couches 			(maybe just a semaphore)
+		Weight* weights			(array of weights)
+
+
+	- Weight
+		int weight
+		bool in_use
+		
+
+	- Workout
+		int sets
+		int total_weight
+		Weight* in_use

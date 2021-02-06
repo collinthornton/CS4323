@@ -1,0 +1,30 @@
+Attendees:
+	- Collin
+	- Robert
+
+Meetings
+	- Mondays & Fridays @ 8:00 p.m.. Cancel if nothing needed
+
+Work Division
+	- Robert -> Part 1
+	- Collin -> Part 2
+	- Tyler  -> Part 3 (if he shows)
+
+Updated the Gantt chart in the Drive
+
+
+Version control
+	- Git
+	- Put compiled files in build/
+	- Put headers in include/
+	- Put drivers in src/
+
+
+Ask about Tyler dropping on Monday 11/9/20.
+
+
+Next meeting
+	- Monday, 11/9/2020 @ 8:00 P.M. on Canvas
+	- Goals: 
+		- define structs
+		- define public functions
